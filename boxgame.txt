@@ -1,0 +1,138 @@
+import pygame
+import sys
+import random
+
+pygame.init()
+
+Width = 800
+Heigth = 600
+
+
+BLACKGROUNG_COLOR = (0,0,0)
+RED = (255,0,0)
+BLUE = (0,0,255)
+YELLOW = (255,255,0)
+
+player_size = 30
+player_pos = [Width/2,Heigth-2*player_size]
+
+enemy_size = 50
+enemy_pos = [random.randint(0,Width-enemy_size),0]
+enemy_list = [enemy_pos]
+
+SPEED =  20
+
+screen = pygame.display.set_mode((Width,Heigth))
+
+game_over = False
+
+score = 0
+
+clock = pygame.time.Clock()
+
+myFont = pygame.font.SysFont("monospace",35)
+
+def set_level(score,SPEED):
+    if score < 20:
+        SPEED = 3
+    elif score < 30:
+        SPEED = 5
+    elif score < 40:
+        SPEED = 9
+    elif score < 50:
+        SPEED = 15
+    elif score < 60:
+        SPEED = 20
+    else:
+        SPEED = 25
+    return SPEED
+
+def drop_enemies(enemy_list):
+    delay = random.random()
+    if len(enemy_list) < 10 and delay < 0.2:
+        xpos = random.randint(0,Width-enemy_size)
+        ypos = 0
+        enemy_list.append([xpos,ypos])
+
+def draw_enemies(enemy_list):
+    for enemy_pos in enemy_list:
+            pygame.draw.rect(screen,BLUE, (enemy_pos[0],enemy_pos[1],enemy_size,enemy_size))
+
+def update_enemy_position(enemy_list,score):
+    for idx,enemy_pos in enumerate(enemy_list):
+        if (enemy_pos[1] >= 0) and (enemy_pos[1] < Heigth):
+            enemy_pos[1] += SPEED
+        else :
+            enemy_list.pop(idx)
+            score += 1
+    return score
+
+def collision_check(enemy_list, player_pos):
+    for enemy_pos in enemy_list:
+        if detect_collision(enemy_pos, player_pos):
+            return True
+    return False
+
+
+def detect_collision(player_pos,enemy_pos):
+    px = player_pos[0]
+    py = player_pos[1]
+
+    ex = enemy_pos[0]
+    ey = enemy_pos[1]
+
+    if (ex >= px and ex < (px + player_size)) or (px >= ex and px < (ex+enemy_size)):
+        if (ey >= py and ey < (py+player_size)) or (py >= ey and py < (ey+enemy_size)):
+            return True
+
+while not game_over:
+
+    for event in pygame.event.get():
+
+        if event.type == pygame.QUIT:
+            sys.exit()
+
+        if event.type == pygame.KEYDOWN:
+
+            x = player_pos[0]
+            y = player_pos[1]
+
+            if event.key ==pygame.K_LEFT:
+                x -= player_size
+            elif event.key == pygame.K_RIGHT:
+                x += player_size
+            elif event.key == pygame.K_DOWN:
+                y += player_size
+            elif event.key == pygame.K_UP:
+                y -= player_size
+            player_pos = [x,y]
+
+    screen.fill(BLACKGROUNG_COLOR)
+
+    # Update position of enemy
+
+
+    if detect_collision(player_pos,enemy_pos):
+        game_over  =True
+        break
+
+    drop_enemies(enemy_list)
+    score = update_enemy_position(enemy_list, score)
+    SPEED = set_level(score,SPEED)
+
+
+    text = "score> "+ str(score)
+    label = myFont.render(text,1,YELLOW)
+    screen.blit(label,(Width-200, Heigth-40))
+    if collision_check(enemy_list,player_pos):
+        game_over = True
+        break
+    draw_enemies(enemy_list)
+
+
+    pygame.draw.rect(screen,RED,(player_pos[0],player_pos[1],player_size,player_size))
+
+
+    clock.tick(30)
+
+    pygame.display.update()
